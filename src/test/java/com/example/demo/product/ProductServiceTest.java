@@ -39,6 +39,22 @@ public class ProductServiceTest {
         }).isInstanceOf(AssertionError.class).hasMessageContaining("Expecting not blank");
     }
 
+    @DisplayName("상품을 조회하는 테스트")
+    @Test
+    public void 상품조회테스트() {
+        // arrange
+        ProductRequestCommand productRequestCommand = new ProductRequestCommand("product001", "test");
+        ProductService productService = new ProductService();
+        int seq = productService.addProduct(productRequestCommand);
+
+        // act
+        Product product = productService.getProduct(seq);
+
+        // assert
+        assertThat(product).isNotNull();
+        assertThat(product.name).isEqualTo(productRequestCommand.name);
+    }
+
     private record Product(String id, String name) {
         private Product{
             Assertions.assertFalse(id.isBlank());
@@ -53,10 +69,16 @@ public class ProductServiceTest {
     }
 
     private class ProductService {
-        void addProduct(ProductRequestCommand command) {
+        int addProduct(ProductRequestCommand command) {
             Product product = new Product(command.id, command.name);
             Integer seq = productMap.size();
             productMap.put(++seq, product);
+            return seq;
+        }
+
+        public Product getProduct(int seq) {
+            Product product = productMap.get(seq);
+            return product;
         }
     }
 }
