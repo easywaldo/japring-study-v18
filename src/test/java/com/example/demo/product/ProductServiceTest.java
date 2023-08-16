@@ -1,8 +1,10 @@
 package com.example.demo.product;
 
-import org.junit.jupiter.api.Assertions;
+import com.example.demo.product.application.command.ProductRequestCommand;
+import com.example.demo.product.service.ProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashMap;
@@ -13,6 +15,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 public class ProductServiceTest {
+    @Autowired
+    private ProductService productService;
+    @Autowired
+    private ProductRepository productRepository;
+
 
     private Map<Integer, Product> productMap = new HashMap<>();
 
@@ -20,14 +27,15 @@ public class ProductServiceTest {
     @Test
     public void 상품등록테스트() {
         // arrange
-        ProductRequestCommand productRequestCommand = new ProductRequestCommand("product001", "test");
+        ProductRequestCommand.command productRequestCommand = new ProductRequestCommand.command("JPA 다루기", 50000);
 
         // act
-        ProductService productService = new ProductService();
-        productService.addProduct(productRequestCommand);
+        ProductService productService = new ProductService(productRepository);
+        Product product = productService.addProduct(productRequestCommand);
 
         // assert
-        assertThat(productMap.size()).isEqualTo(1);
+        Product searchProduct = productRepository.findById(product.getId()).get();
+        assertThat(searchProduct.getName()).isEqualTo(product.getName());
     }
 
     @DisplayName("상품을 등록 실패 테스트")
@@ -35,50 +43,23 @@ public class ProductServiceTest {
     public void 상품등록실패테스트() {
         // arrange and assert
         assertThatThrownBy(() -> {
-            new ProductRequestCommand("produt002", "");
-        }).isInstanceOf(AssertionError.class).hasMessageContaining("Expecting not blank");
+            new ProductRequestCommand.command("", 5000);
+        }).isInstanceOf(AssertionError.class);
     }
 
     @DisplayName("상품을 조회하는 테스트")
     @Test
     public void 상품조회테스트() {
         // arrange
-        ProductRequestCommand productRequestCommand = new ProductRequestCommand("product001", "test");
-        ProductService productService = new ProductService();
-        int seq = productService.addProduct(productRequestCommand);
+        ProductRequestCommand.command productRequestCommand = new ProductRequestCommand.command("코틀린 프레임워크", 40000);
+        ProductService productService = new ProductService(productRepository);
+        Product product = productService.addProduct(productRequestCommand);
 
         // act
-        Product product = productService.getProduct(seq);
+        Product searchProduct = productService.getProduct(product.getId());
 
         // assert
-        assertThat(product).isNotNull();
-        assertThat(product.name).isEqualTo(productRequestCommand.name);
-    }
-
-    private record Product(String id, String name) {
-        private Product{
-            Assertions.assertFalse(id.isBlank());
-        }
-    }
-
-    public record ProductRequestCommand(String id, String name) {
-        public ProductRequestCommand{
-            assertThat(id).isNotBlank();
-            assertThat(name).isNotBlank();
-        }
-    }
-
-    private class ProductService {
-        int addProduct(ProductRequestCommand command) {
-            Product product = new Product(command.id, command.name);
-            Integer seq = productMap.size();
-            productMap.put(++seq, product);
-            return seq;
-        }
-
-        public Product getProduct(int seq) {
-            Product product = productMap.get(seq);
-            return product;
-        }
+        assertThat(searchProduct).isNotNull();
+        assertThat(searchProduct.getName()).isEqualTo(productRequestCommand.name());
     }
 }
