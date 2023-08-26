@@ -4,6 +4,8 @@ import com.example.demo.product.Product;
 import com.example.demo.product.ProductRepository;
 import com.example.demo.product.application.command.ProductRequestCommand;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,15 @@ public class ProductService {
         return product;
     }
 
+    @Transactional(readOnly = true)
     public Product getProduct(Long productId) {
         Product product = productRepository.findById(productId).orElseThrow();
         return product;
+    }
+
+    @Transactional(readOnly = true)
+    public Slice<Product> getProductListByName(String name, PageRequest pageRequest) {
+        Slice<Product> slicedProductList = productRepository.findByNameLike("%s%%".formatted(name), pageRequest);
+        return slicedProductList;
     }
 }
